@@ -58,6 +58,7 @@ void Cheb_Node<Real_t>::Initialize(TreeNode* parent_, int path2node_, TreeNode::
     }else if(this->cheb_value.Dim()>0){
       size_t n_ptr=this->cheb_coord.Dim()/this->Dim();
       assert(n_ptr*data_dof==this->cheb_value.Dim());
+      PVFMM_UNUSED(n_ptr);
       points2cheb<Real_t>(cheb_deg,&(this->cheb_coord[0]),&(this->cheb_value[0]),
           this->cheb_coord.Dim()/this->Dim(),data_dof,this->Coord(),
           1/(Real_t)(1UL<<this->Depth()), cheb_coeff);

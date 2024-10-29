@@ -1750,23 +1750,23 @@ void FMM_Pts<FMMNode>::SetupInterac(SetupData<Real_t>& setup_data, bool device){
       ((size_t*)data_ptr)[0]=      dof; data_ptr+=sizeof(size_t);
 
       ((size_t*)data_ptr)[0]=interac_blk.size(); data_ptr+=sizeof(size_t);
-      mem::copy<size_t>((size_t*)data_ptr, &interac_blk[0], interac_blk.size());
+      if (interac_blk.size()) mem::copy<size_t>((size_t*)data_ptr, &interac_blk[0], interac_blk.size());
       data_ptr+=interac_blk.size()*sizeof(size_t);
 
       ((size_t*)data_ptr)[0]=interac_cnt.size(); data_ptr+=sizeof(size_t);
-      mem::copy<size_t>((size_t*)data_ptr, &interac_cnt[0], interac_cnt.size());
+      if (interac_cnt.size()) mem::copy<size_t>((size_t*)data_ptr, &interac_cnt[0], interac_cnt.size());
       data_ptr+=interac_cnt.size()*sizeof(size_t);
 
       ((size_t*)data_ptr)[0]=interac_mat.size(); data_ptr+=sizeof(size_t);
-      mem::copy<size_t>((size_t*)data_ptr, &interac_mat[0], interac_mat.size());
+      if (interac_mat.size()) mem::copy<size_t>((size_t*)data_ptr, &interac_mat[0], interac_mat.size());
       data_ptr+=interac_mat.size()*sizeof(size_t);
 
       ((size_t*)data_ptr)[0]= input_perm.size(); data_ptr+=sizeof(size_t);
-      mem::copy<size_t>((size_t*)data_ptr,  &input_perm[0],  input_perm.size());
+      if (input_perm.size()) mem::copy<size_t>((size_t*)data_ptr,  &input_perm[0],  input_perm.size());
       data_ptr+= input_perm.size()*sizeof(size_t);
 
       ((size_t*)data_ptr)[0]=output_perm.size(); data_ptr+=sizeof(size_t);
-      mem::copy<size_t>((size_t*)data_ptr, &output_perm[0], output_perm.size());
+      if (output_perm.size()) mem::copy<size_t>((size_t*)data_ptr, &output_perm[0], output_perm.size());
       data_ptr+=output_perm.size()*sizeof(size_t);
     }
   }
@@ -2400,7 +2400,7 @@ void FMM_Pts<FMMNode>::Source2UpSetup(SetupData<Real_t>&  setup_data, FMMTree_t*
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // scal_idx
@@ -2415,7 +2415,7 @@ void FMM_Pts<FMMNode>::Source2UpSetup(SetupData<Real_t>&  setup_data, FMMTree_t*
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // coord_shift
@@ -2430,7 +2430,7 @@ void FMM_Pts<FMMNode>::Source2UpSetup(SetupData<Real_t>&  setup_data, FMMTree_t*
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // interac_cnt
@@ -2445,14 +2445,14 @@ void FMM_Pts<FMMNode>::Source2UpSetup(SetupData<Real_t>&  setup_data, FMMTree_t*
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // interac_dsp
         pvfmm::Vector<size_t>& cnt=interac_data.interac_cnt;
         pvfmm::Vector<size_t>& dsp=interac_data.interac_dsp;
         dsp.ReInit(cnt.Dim()); if(dsp.Dim()) dsp[0]=0;
-        omp_par::scan(&cnt[0],&dsp[0],dsp.Dim());
+        if (dsp.Dim()) omp_par::scan(&cnt[0],&dsp[0],dsp.Dim());
       }
     }
     { // Set M[2], M[3]
@@ -2634,7 +2634,7 @@ void FMM_Pts<FMMNode>::FFT_UpEquiv(size_t dof, size_t m, size_t ker_dim0, Vector
 
         //Compute flops.
         #ifndef PVFMM_FFTW3_MKL
-        double add, mul, fma;
+        double add=0, mul=0, fma=0;
         FFTW_t<Real_t>::fftw_flops(vlist_fftplan, &add, &mul, &fma);
         #ifndef __INTEL_OFFLOAD0
         Profile::Add_FLOP((long long)(add+mul+2*fma));
@@ -2720,7 +2720,7 @@ void FMM_Pts<FMMNode>::FFT_Check2Equiv(size_t dof, size_t m, size_t ker_dim1, Ve
                                                                                      (Real_t*)&buffer1[i*  n3 *ker_dim1*chld_cnt]);
         //Compute flops.
         #ifndef PVFMM_FFTW3_MKL
-        double add, mul, fma;
+        double add=0, mul=0, fma=0;
         FFTW_t<Real_t>::fftw_flops(vlist_ifftplan, &add, &mul, &fma);
         #ifndef __INTEL_OFFLOAD0
         Profile::Add_FLOP((long long)(add+mul+2*fma)*dof);
@@ -3434,36 +3434,36 @@ void FMM_Pts<FMMNode>::V_ListSetup(SetupData<Real_t>&  setup_data, FMMTree_t* tr
       ((size_t*)data_ptr)[0]=   n_blk0; data_ptr+=sizeof(size_t);
 
       ((size_t*)data_ptr)[0]= interac_mat.size(); data_ptr+=sizeof(size_t);
-      mem::copy<size_t>((size_t*)data_ptr, &interac_mat[0], interac_mat.size());
+      if (interac_mat.size()) mem::copy<size_t>((size_t*)data_ptr, &interac_mat[0], interac_mat.size());
       data_ptr+=interac_mat.size()*sizeof(size_t);
 
       ((size_t*)data_ptr)[0]= interac_mat_ptr.size(); data_ptr+=sizeof(size_t);
-      mem::copy<Real_t*>((Real_t**)data_ptr, &interac_mat_ptr[0], interac_mat_ptr.size());
+      if (interac_mat_ptr.size()) mem::copy<Real_t*>((Real_t**)data_ptr, &interac_mat_ptr[0], interac_mat_ptr.size());
       data_ptr+=interac_mat_ptr.size()*sizeof(Real_t*);
 
       for(size_t blk0=0;blk0<n_blk0;blk0++){
         ((size_t*)data_ptr)[0]= fft_vec[blk0].size(); data_ptr+=sizeof(size_t);
-        mem::copy<size_t>((size_t*)data_ptr, & fft_vec[blk0][0],  fft_vec[blk0].size());
+        if (fft_vec[blk0].size()) mem::copy<size_t>((size_t*)data_ptr, & fft_vec[blk0][0],  fft_vec[blk0].size());
         data_ptr+= fft_vec[blk0].size()*sizeof(size_t);
 
         ((size_t*)data_ptr)[0]=ifft_vec[blk0].size(); data_ptr+=sizeof(size_t);
-        mem::copy<size_t>((size_t*)data_ptr, &ifft_vec[blk0][0], ifft_vec[blk0].size());
+        if (ifft_vec[blk0].size()) mem::copy<size_t>((size_t*)data_ptr, &ifft_vec[blk0][0], ifft_vec[blk0].size());
         data_ptr+=ifft_vec[blk0].size()*sizeof(size_t);
 
         ((size_t*)data_ptr)[0]= fft_scl[blk0].size(); data_ptr+=sizeof(size_t);
-        mem::copy<Real_t>((Real_t*)data_ptr, & fft_scl[blk0][0],  fft_scl[blk0].size());
+        if (fft_scl[blk0].size()) mem::copy<Real_t>((Real_t*)data_ptr, & fft_scl[blk0][0],  fft_scl[blk0].size());
         data_ptr+= fft_scl[blk0].size()*sizeof(Real_t);
 
         ((size_t*)data_ptr)[0]=ifft_scl[blk0].size(); data_ptr+=sizeof(size_t);
-        mem::copy<Real_t>((Real_t*)data_ptr, &ifft_scl[blk0][0], ifft_scl[blk0].size());
+        if (ifft_scl[blk0].size()) mem::copy<Real_t>((Real_t*)data_ptr, &ifft_scl[blk0][0], ifft_scl[blk0].size());
         data_ptr+=ifft_scl[blk0].size()*sizeof(Real_t);
 
         ((size_t*)data_ptr)[0]=interac_vec[blk0].size(); data_ptr+=sizeof(size_t);
-        mem::copy<size_t>((size_t*)data_ptr, &interac_vec[blk0][0], interac_vec[blk0].size());
+        if (interac_vec[blk0].size()) mem::copy<size_t>((size_t*)data_ptr, &interac_vec[blk0][0], interac_vec[blk0].size());
         data_ptr+=interac_vec[blk0].size()*sizeof(size_t);
 
         ((size_t*)data_ptr)[0]=interac_dsp[blk0].size(); data_ptr+=sizeof(size_t);
-        mem::copy<size_t>((size_t*)data_ptr, &interac_dsp[blk0][0], interac_dsp[blk0].size());
+        if (interac_dsp[blk0].size()) mem::copy<size_t>((size_t*)data_ptr, &interac_dsp[blk0][0], interac_dsp[blk0].size());
         data_ptr+=interac_dsp[blk0].size()*sizeof(size_t);
       }
     }
@@ -4558,7 +4558,7 @@ void FMM_Pts<FMMNode>::X_ListSetup(SetupData<Real_t>&  setup_data, FMMTree_t* tr
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // scal_idx
@@ -4573,7 +4573,7 @@ void FMM_Pts<FMMNode>::X_ListSetup(SetupData<Real_t>&  setup_data, FMMTree_t* tr
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // coord_shift
@@ -4588,7 +4588,7 @@ void FMM_Pts<FMMNode>::X_ListSetup(SetupData<Real_t>&  setup_data, FMMTree_t* tr
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // interac_cnt
@@ -4603,14 +4603,14 @@ void FMM_Pts<FMMNode>::X_ListSetup(SetupData<Real_t>&  setup_data, FMMTree_t* tr
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // interac_dsp
         pvfmm::Vector<size_t>& cnt=interac_data.interac_cnt;
         pvfmm::Vector<size_t>& dsp=interac_data.interac_dsp;
         dsp.ReInit(cnt.Dim()); if(dsp.Dim()) dsp[0]=0;
-        omp_par::scan(&cnt[0],&dsp[0],dsp.Dim());
+        if (dsp.Dim()) omp_par::scan(&cnt[0],&dsp[0],dsp.Dim());
       }
     }
   }
@@ -4844,7 +4844,7 @@ void FMM_Pts<FMMNode>::W_ListSetup(SetupData<Real_t>&  setup_data, FMMTree_t* tr
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // scal_idx
@@ -4859,7 +4859,7 @@ void FMM_Pts<FMMNode>::W_ListSetup(SetupData<Real_t>&  setup_data, FMMTree_t* tr
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // coord_shift
@@ -4874,7 +4874,7 @@ void FMM_Pts<FMMNode>::W_ListSetup(SetupData<Real_t>&  setup_data, FMMTree_t* tr
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // interac_cnt
@@ -4889,14 +4889,14 @@ void FMM_Pts<FMMNode>::W_ListSetup(SetupData<Real_t>&  setup_data, FMMTree_t* tr
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // interac_dsp
         pvfmm::Vector<size_t>& cnt=interac_data.interac_cnt;
         pvfmm::Vector<size_t>& dsp=interac_data.interac_dsp;
         dsp.ReInit(cnt.Dim()); if(dsp.Dim()) dsp[0]=0;
-        omp_par::scan(&cnt[0],&dsp[0],dsp.Dim());
+        if (dsp.Dim()) omp_par::scan(&cnt[0],&dsp[0],dsp.Dim());
       }
     }
   }
@@ -5240,7 +5240,7 @@ void FMM_Pts<FMMNode>::U_ListSetup(SetupData<Real_t>& setup_data, FMMTree_t* tre
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // scal_idx
@@ -5255,7 +5255,7 @@ void FMM_Pts<FMMNode>::U_ListSetup(SetupData<Real_t>& setup_data, FMMTree_t* tre
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // coord_shift
@@ -5270,7 +5270,7 @@ void FMM_Pts<FMMNode>::U_ListSetup(SetupData<Real_t>& setup_data, FMMTree_t* tre
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // interac_cnt
@@ -5285,14 +5285,14 @@ void FMM_Pts<FMMNode>::U_ListSetup(SetupData<Real_t>& setup_data, FMMTree_t* tre
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // interac_dsp
         pvfmm::Vector<size_t>& cnt=interac_data.interac_cnt;
         pvfmm::Vector<size_t>& dsp=interac_data.interac_dsp;
         dsp.ReInit(cnt.Dim()); if(dsp.Dim()) dsp[0]=0;
-        omp_par::scan(&cnt[0],&dsp[0],dsp.Dim());
+        if (dsp.Dim()) omp_par::scan(&cnt[0],&dsp[0],dsp.Dim());
       }
     }
   }
@@ -5540,7 +5540,7 @@ void FMM_Pts<FMMNode>::Down2TargetSetup(SetupData<Real_t>&  setup_data, FMMTree_
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // scal_idx
@@ -5555,7 +5555,7 @@ void FMM_Pts<FMMNode>::Down2TargetSetup(SetupData<Real_t>&  setup_data, FMMTree_
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // coord_shift
@@ -5570,7 +5570,7 @@ void FMM_Pts<FMMNode>::Down2TargetSetup(SetupData<Real_t>&  setup_data, FMMTree_
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // interac_cnt
@@ -5585,14 +5585,14 @@ void FMM_Pts<FMMNode>::Down2TargetSetup(SetupData<Real_t>&  setup_data, FMMTree_
         vec.ReInit(vec_dsp[omp_p]);
         #pragma omp parallel for
         for(int tid=0;tid<omp_p;tid++){
-          memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
+          if (vec_[tid].size()) memcpy(&vec[0]+vec_dsp[tid],&vec_[tid][0],vec_[tid].size()*sizeof(ElemType));
         }
       }
       { // interac_dsp
         pvfmm::Vector<size_t>& cnt=interac_data.interac_cnt;
         pvfmm::Vector<size_t>& dsp=interac_data.interac_dsp;
         dsp.ReInit(cnt.Dim()); if(dsp.Dim()) dsp[0]=0;
-        omp_par::scan(&cnt[0],&dsp[0],dsp.Dim());
+        if (dsp.Dim()) omp_par::scan(&cnt[0],&dsp[0],dsp.Dim());
       }
     }
     { // Set M[0], M[1]

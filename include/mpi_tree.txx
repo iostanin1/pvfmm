@@ -1189,7 +1189,7 @@ void MPI_Tree<TreeNode>::SetColleagues(BoundaryType bndry, Node_t* node){
     }
     for(size_t i=0;i<PVFMM_MAX_DEPTH;i++){
       size_t j0=nodes[i].size();
-      Node_t** nodes_=&nodes[i][0];
+      auto& nodes_=nodes[i];
       #pragma omp parallel for
       for(size_t j=0;j<j0;j++){
         SetColleagues(bndry, nodes_[j]);

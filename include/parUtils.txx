@@ -269,7 +269,7 @@ namespace par{
       // First construct arrays of wts.
       Vector<long long> wts_(nlSize);
       if(wts == NULL) {
-        wts=&wts_[0];
+        wts=wts_.Begin();
         #pragma omp parallel for
         for (long long i = 0; i < nlSize; i++){
           wts[i] = 1;
@@ -341,8 +341,8 @@ namespace par{
       Vector<T> newNodes(nn);
 
       // perform All2All  ...
-      par::Mpi_Alltoallv_sparse<T>(&nodeList[0], &sendSz[0], &sendOff[0],
-          &newNodes[0], &recvSz[0], &recvOff[0], comm);
+      par::Mpi_Alltoallv_sparse<T>(nodeList.Begin(), &sendSz[0], &sendOff[0],
+          newNodes.Begin(), &recvSz[0], &recvOff[0], comm);
 
       // reset the pointer ...
       nodeList=newNodes;
@@ -380,7 +380,7 @@ namespace par{
 
       // Local sort.
       Vector<T> arr=arr_;
-      omp_par::merge_sort(&arr[0], &arr[0]+nelem);
+      if (arr.Dim()) omp_par::merge_sort(&arr[0], &arr[0]+nelem);
 
       // Allocate memory.
       Vector<T> nbuff;
@@ -504,7 +504,7 @@ namespace par{
       if(free_comm) MPI_Comm_free(&comm);
 
       SortedElem.Resize(nelem);
-      memcpy(&SortedElem[0], &arr[0], nelem*sizeof(T));
+      if (nelem) memcpy(&SortedElem[0], &arr[0], nelem*sizeof(T));
 
       par::partitionW<T>(SortedElem, NULL , comm_);
       return 0;
@@ -607,8 +607,8 @@ namespace par{
         Vector<Pair_t> newNodes(nn);
 
         // perform All2All  ...
-        par::Mpi_Alltoallv_sparse<Pair_t>(&psorted[0], &sendSz[0], &sendOff[0],
-            &newNodes[0], &recvSz[0], &recvOff[0], comm);
+        par::Mpi_Alltoallv_sparse<Pair_t>(psorted.Begin(), &sendSz[0], &sendOff[0],
+            newNodes.Begin(), &recvSz[0], &recvOff[0], comm);
 
         // reset the pointer ...
         psorted.Swap(newNodes);

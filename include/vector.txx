@@ -223,7 +223,7 @@ Vector<T>& Vector<T>::operator=(const std::vector<T>& V){
     if(dim!=V.size()) FreeDevice(false);
     if(capacity<V.size()) ReInit(V.size());
     dim=V.size();
-    mem::copy<T>(data_ptr,&V[0],dim);
+    if (dim) mem::copy<T>(data_ptr,&V[0],dim);
   }
   return *this;
 }
